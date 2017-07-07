@@ -4,8 +4,9 @@ import datetime
 async def poast():
     try:
         con = await asyncpg.connect(user="yjgao",password="123456",database="test")
-        a = await  con.fetch("select id from users where username = 'yjgao'")
-        print(tuple(a[0])[0])
+        a = await  con.fetch("select id from users where username = 'uu'")
+        c = len(a)
+        print(a)
     except asyncpg.CannotConnectNowError as e:
         print(e)
 
