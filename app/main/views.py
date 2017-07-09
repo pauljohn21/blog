@@ -8,16 +8,16 @@ from ..utils.to_dict import posts_to_dict
 class homeView(HTTPMethodView):
     async def get(self,request):
         try:
-            user = request.sessions.get['user']
+            user = request['session']['user']
             _pool = request.app.pool
             async with _pool.acquire() as con:
                 id = await con.fetch("select id from users where username = $1",
                                            user.get('username'))
                 if tuple(id[0])[0] == user.get('id'):
-                    posts = await con.fetch("select * from posts,users where author_id = $1",
-                                              user.get('id'))
-                    posts_dict = posts_to_dict(posts)
-                    response = json.dumps(posts_dict)
+                    posts = await con.fetch("select p.* from users u left join posts p on u.id = p.author_id  where u.id = $1",user.get('id'))
+                    posts = posts_to_dict(posts)
+                    posts.update(request['session'])
+                    response = json(posts)
                     return response
                 else:
                     return json({"message":"Id Not Match Username"})
@@ -26,8 +26,7 @@ class homeView(HTTPMethodView):
             return json({"message":e})
 
     async def delete(self,request):
-        try:
-            self.
+        pass
 
 main.add_route(homeView.as_view(),"/")
 
@@ -52,7 +51,7 @@ class postView(HTTPMethodView):
     async def put(self,request,id):
         try:
             if request.sessions.get('user'):
-                user_id  = request.sessions.['user'].get('id')
+                user_id  = request.sessions['user'].get('id')
                 pool = request.app.pool
                 async with pool.acquire() as con:
                     author = await con.fetch("select author_id from post where id = $1",id)
