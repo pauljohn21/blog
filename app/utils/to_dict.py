@@ -22,6 +22,8 @@ def posts_to_dict(posts):
             _p = dict(post)
             if _p.get('create_time'):
                 _p['create_time'] = _p['create_time'].strftime("%Y-%m-%d %H:%M:%S")
+            if _p.get('last_update_time'):
+                _p['last_update_time'] = _p.get('last_update_time').strftime('%Y-%m-%d %H:%M:%S')
             _posts['posts'].append(_p)
         return _posts
 

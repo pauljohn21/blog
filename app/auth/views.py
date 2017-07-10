@@ -6,19 +6,17 @@ from . import auth
 from ..models import verify,generate_password_hash,pool,release
 from ..utils.to_dict import user_to_dict
 from ..utils.sql import Auth
-from ..utils.transfer_verify import user_verify
 
 now_time = datetime.datetime.now()
 
 class loginView(HTTPMethodView):
 
     async def get(self,request):
-        try:
-            user = request['session']['user']
+            user = request['session'].get('user')
             if user:
                 return redirect('/')
-        except:
-            return await file("app/templates/auth/login.html")
+            else:
+                return await file("app/templates/auth/login.html")
 
 
     async def post(self,request):
@@ -29,7 +27,7 @@ class loginView(HTTPMethodView):
                 con = await pool(request.app)
                 get_user = await con.fetch(Auth.get('select_user'),username)
                 user = user_to_dict(get_user)
-                password_hash = user['users'][0].get('password_hash')
+                password_hash = user['users'][0].get('password')
                 id = user['users'][0].get('id')
                 if user and verify(password=password,password_hash=password_hash):
                     await con.execute(Auth.get('login_update'),now_time,id)
@@ -41,7 +39,8 @@ class loginView(HTTPMethodView):
         if not request['session'].get('user'):
             request['session']['user'] =  {"id":id,"username":username}
             return json({"message":"success"})
-
+        else:
+            return json({"message":"logined"})
 
 auth.add_route(loginView.as_view(),"/login")
 
@@ -87,7 +86,7 @@ class userprofileView(HTTPMethodView):
         if request['session'].get('user'):
             id = request['session']['user'].get('id')
             con = await pool(request.app)
-            get_user  = con.fetch(Auth.get("select_user_profile"),id)
+            get_user  = await con.fetch(Auth.get("select_user_profile"),id)
             users = user_to_dict(get_user)
             return json(users)
             await release(request.app,con)
@@ -98,9 +97,8 @@ class userprofileView(HTTPMethodView):
         if request['session'].get('user'):
             id = request['session']['user'].get('id')
             con = await pool(request.app)
-            user = user_verify(request.form)
-            location = user.get('location')
-            levemessage = user.get('levemessage')
+            location = request.form.get('location')
+            levemessage = request.form.get('levemessage')
             await con.fetch(Auth.get("update_user_profile"),location,levemessage,id)
             return json({"message":"update success"})
         else:
