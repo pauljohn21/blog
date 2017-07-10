@@ -10,6 +10,13 @@ async def connect_db(app,loop):
 async def close_db(app,loop):
     await _pool.close()
 
+async def pool(app):
+    con = await app.pool.require()
+    return con
+
+async def release(app,con):
+    await app.pool.release(con)
+
 
 @property
 def password():

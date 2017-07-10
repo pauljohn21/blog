@@ -5,6 +5,5 @@ def user_verify(form):
     if isinstance(form,dict):
         for key,value in form.items():
             if key and value:
-                if isinstance(value,tuple):
-                    pass
+                _user.update({key:value})
     return _user

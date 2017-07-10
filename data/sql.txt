@@ -1,0 +1,14 @@
+#
+create table users (id serial primary key,username varchar(16) unique,password varchar,create_time timestamp without time zone,
+last_login_time timestamp without time zone,followers boolean[],following boolean[]);
+#
+alter table users owner to yjgao;
+#
+alter table users rename COLUMN password to password_hash;
+#
+alter table users add column location varchar(16);
+#
+alter table users add column levemessage varchar(16);
+#
+create table posts (id serial primary key,post_title varchar(64),post text,create_time timestamp without time zone,
+last_update_time timestamp without time zone,author_id integer references users(id),tag varchar(16));

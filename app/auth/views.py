@@ -3,9 +3,12 @@ from sanic.response import json,file,redirect,html
 from sanic.views import HTTPMethodView
 
 from . import auth
-from ..models import verify,generate_password_hash
+from ..models import verify,generate_password_hash,pool,release
 from ..utils.to_dict import user_to_dict
 from ..utils.sql import Auth
+from ..utils.transfer_verify import user_verify
+
+now_time = datetime.datetime.now()
 
 class loginView(HTTPMethodView):
 
@@ -15,32 +18,29 @@ class loginView(HTTPMethodView):
             if user:
                 return redirect('/')
         except:
-            filename = await file("app/teplates/auth/login.html")
-            return html(filename)
+            return await file("app/templates/auth/login.html")
 
 
     async def post(self,request):
         try:
-            username = request.form['username'][0]
-            password = request.form['password'][0]
+            username = request.form.get('username')
+            password = request.form.get('password')
             if username and password :
-                _pool =request.app.pool
-                async with _pool.acquire() as con:
-                    user = await con.fetch(Auth.get('login_post'),username)
-                    user_dict = user_to_dict(user)
-                    if user and verify(password=password,
-                                       password_hash=user_dict['users'][0].get('password_hash')):
-                        await con.execute("update users set last_login_time = $1 where id = $2",
-                                          datetime.datetime.now(), user_dict['users'][0].get('id'))
-                    else:
-                        return json({"message": "Fail"})
-                await _pool.release(con)
+                con = await pool(request.app)
+                get_user = await con.fetch(Auth.get('select_user'),username)
+                user = user_to_dict(get_user)
+                password_hash = user['users'][0].get('password_hash')
+                id = user['users'][0].get('id')
+                if user and verify(password=password,password_hash=password_hash):
+                    await con.execute(Auth.get('login_update'),now_time,id)
+                else:
+                    return json({"message": "Fail"})
+                await release(request.app,con)
         except Exception as e:
             return json({"message":e})
         if not request['session'].get('user'):
-            request['session']['user'] =  {"id":user_dict['users'][0].get('id'),
-                                           "username":username}
-            return redirect('/')
+            request['session']['user'] =  {"id":id,"username":username}
+            return json({"message":"success"})
 
 
 auth.add_route(loginView.as_view(),"/login")
@@ -54,16 +54,15 @@ class registerView(HTTPMethodView):
             username = request.form['username'][0]
             password = request.form['password'][0]
             if password and username :
-                _pool = request.app.pool
-                async with _pool.acquire() as con:
-                    user_b = await con.fetchval("select * from users where username = $1",username)
-                    if user_b:
-                        return json({"message":"Exist"})
-                    else:
-                        password_hash = generate_password_hash(password)
-                        await con.execute("insert into users (username,password_hash) values ($1,$2)",username,password_hash)
-                        return json({"message":"Success"})
-                await _pool.release(con)
+                con = await pool(request.app)
+                select_user = await con.fetchval(Auth.get('select_user'),username)
+                if select_user:
+                    return json({"message":"Exist"})
+                else:
+                    password_hash = generate_password_hash(password)
+                    await con.execute(Auth.get('register_insert'),username,password_hash,now_time,now_time)
+                    return json({"message":"Success"})
+                await release(request.app, con)
             else:
                 return json({"message": "Empty"})
         except Exception as e:
@@ -83,7 +82,32 @@ class logoutView(HTTPMethodView):
 
 auth.add_route(logoutView.as_view(),"/logout")
 
-
-class userProfileView(HTTPMethodView):
+class userprofileView(HTTPMethodView):
     async def get(self,request):
-        pass
+        if request['session'].get('user'):
+            id = request['session']['user'].get('id')
+            con = await pool(request.app)
+            get_user  = con.fetch(Auth.get("select_user_profile"),id)
+            users = user_to_dict(get_user)
+            return json(users)
+            await release(request.app,con)
+        else:
+            return json({"message":"please login"})
+
+    async def post(self,request):
+        if request['session'].get('user'):
+            id = request['session']['user'].get('id')
+            con = await pool(request.app)
+            user = user_verify(request.form)
+            location = user.get('location')
+            levemessage = user.get('levemessage')
+            await con.fetch(Auth.get("update_user_profile"),location,levemessage,id)
+            return json({"message":"update success"})
+        else:
+            return json({"message":"please login"})
+
+auth.add_route(userprofileView.as_view(),"/user/profile/")
+
+
+
+
