@@ -1,4 +1,4 @@
 # blog
 based on
-~sanic for server
-~postgresql for db 
+1. sanic for server
+2. postgresql for db 
