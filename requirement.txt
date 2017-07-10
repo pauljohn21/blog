@@ -6,9 +6,10 @@ chardet==3.0.4
 httpie==0.9.9
 httptools==0.0.9
 idna==2.5
+Jinja2==2.9.6
+MarkupSafe==1.0
 Pygments==2.2.0
 pymongo==3.4.0
-redis==2.10.5
 requests==2.18.1
 sanic==0.5.4
 sanic-session==0.1.5
