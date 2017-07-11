@@ -38,24 +38,26 @@ class postView(HTTPMethodView):
 
 
     async def put(self,request,id):
-        user = request.session.get('user')
-        if user:
-            user_id = user.get('id')
-            con = await pool(request.app)
-            post = await con.fetch(Main.get("post_select"),id)
-            post = posts_to_dict(post)
-            author_id = post.get("author_id")
-            if author_id == user_id:
-                post = request.form.get('post')
-                post_title = request.form.get("post_title")
-                tag = request.form.get("tag")
-                await con.fetch(Main.get("post_update"),post,post_title,tag,now,id)
-                return json({"message":"Success"})
+            user = request['session'].get('user')
+            if user:
+                user_id = user.get('id')
+                con = await pool(request.app)
+                author_id = await con.fetch(Main.get("select_author"),id)
+                if len(author_id):
+                    if tuple(author_id[0])[0] == user_id:
+                        post = request.form.get('post')
+                        post_title = request.form.get("post_title")
+                        tag = request.form.get("tag")
+                        await con.fetch(Main.get("post_update"),post,post_title,tag,now,id)
+                        return json({"message":"Success"})
+                    else:
+                        return json({"message":"Forbid"})
+
+                else:
+                    return json({"message":"post not exist"})
+                await release(request.app, con)
             else:
-                return json({"message":"Forbid"})
-            await pool.release(con)
-        else:
-            return redirect("/login")
+                return json({"message":"forbid"})
 
 
     async def delete(self, request,id):
@@ -64,35 +66,45 @@ class postView(HTTPMethodView):
             user_id = user.get('id')
             con = await pool(request.app)
             post = await con.fetch(Main.get('post_select'),id)
-            post = posts_to_dict(post)
-            author_id = post.get("author_id")
-            if user_id == author_id:
-                await con.fetch(Main.get("post_del"),id)
+            if post:
+                post = posts_to_dict(post)
+                author_id = post['posts'][0].get("author_id")
+                if user_id == author_id:
+                    await con.fetch(Main.get("post_del"),id)
+                else:
+                    return json({"messsage":"forbid"})
             else:
-                return ({"messsage":"forbid"})
-            await pool.release(con)
+                return json({"message":"no post"})
+            await release(request.app,con)
         else:
-            return redirect("/login")
+            return json({"message":"please login"})
 
 main.add_route(postView.as_view(),"/post/<id:int>")
 
 
 class createPostView(HTTPMethodView):
     async def get(self,request):
-        return file("app/templates/post_create.html")
+        user = request['session'].get('user')
+        if user:
+            return await file("app/templates/posts/post_create.html")
+        else:
+            return redirect("/login")
 
     async def post(self,request):
-            user = request.sessions.get('user')
+            user = request['session'].get('user')
             if user:
                 form = request.form
                 _post_title = form.get("post_title")
                 _post = form.get("post")
                 _user_id = user.get('id')
                 _tag = user.get("tag")
-                con = await pool(request.app)
-                await con.fetch(Main.get("create_post"),_post_title,_post,_user_id,now,now,_tag)
-                return json({"message":"Success"})
-                await pool.release(con)
+                if _post and _post_title and _user_id:
+                    con = await pool(request.app)
+                    await con.fetch(Main.get("create_post"),_post_title,_post,_user_id,now,now,_tag)
+                    return json({"message":"Success"})
+                    await release(request.app,con)
+                else:
+                    return json({"message":"post is null"})
             else:
                 return redirect("/login")
 

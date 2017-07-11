@@ -11,8 +11,10 @@ API = {
     "get_users":"select u.id,u.username,u.location,u.levemessage,u.last_login_time from users u",
     "get_user":"select u.id,u.username,u.location,u.levemessage,u.last_login_time from users u id = $1"
 }
+
 Main = {
-    "home_select":"select * from posts",
+    "select_author":"select author_id from posts where id = $1",
+    "home_select":"select * from posts order by last_update_time desc",
     "post_del":"delete from posts where id = $1",
     "post_select":"select * from posts where id = $1",
     "post_update":"update posts set post = $1,post_title = $2,tag = $3,last_update_time = $4 where id = $5",
