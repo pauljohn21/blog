@@ -34,6 +34,8 @@ def comments_to_dict(comments):
             _c = dict(comment)
             if _c.get("last_update_time"):
                 _c['last_update_time'] = _c['last_update_time'].strftime('%Y-%m-%d %H:%M:%S')
+            if _c.get('create_time'):
+                _c['create_time'] = _c.get('create_time').strftime("%Y-%m-%d %H:%M:%S")
                 _comments['comments'].append(_c)
         return _comments
 

@@ -1,4 +1,5 @@
 import datetime
+import logging
 from sanic.response import json,file,redirect,html
 from sanic.views import HTTPMethodView
 
@@ -7,7 +8,8 @@ from ..models import verify,generate_password_hash,pool,release
 from ..utils.to_dict import user_to_dict
 from ..utils.sql import Auth
 
-now_time = datetime.datetime.now()
+logger = logging.getLogger(__name__)
+
 
 class loginView(HTTPMethodView):
 
@@ -30,6 +32,7 @@ class loginView(HTTPMethodView):
                 password_hash = user['users'][0].get('password')
                 id = user['users'][0].get('id')
                 if user and verify(password=password,password_hash=password_hash):
+                    now_time = datetime.datetime.now()
                     await con.execute(Auth.get('login_update'),now_time,id)
                 else:
                     return json({"message": "Fail"})
@@ -59,6 +62,7 @@ class registerView(HTTPMethodView):
                     return json({"message":"Exist"})
                 else:
                     password_hash = generate_password_hash(password)
+                    now_time = datetime.datetime.now()
                     await con.execute(Auth.get('register_insert'),username,password_hash,now_time,now_time)
                     return json({"message":"Success"})
                 await release(request.app, con)

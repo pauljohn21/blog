@@ -7,9 +7,9 @@ from ..utils.to_dict import posts_to_dict,comments_to_dict
 from ..models import pool,release
 from ..utils.sql import Main
 
-now = datetime.datetime.now()
 
 class homeView(HTTPMethodView):
+
     async def get(self,request):
         con = await pool(request.app)
         posts = await con.fetch(Main.get("home_select"))
@@ -26,6 +26,7 @@ main.add_route(homeView.as_view(),"/")
 
 
 class postView(HTTPMethodView):
+
     async def get(self,request,id):
         con = await pool(request.app)
         post = await con.fetch(Main.get("post_select"),id)
@@ -51,6 +52,7 @@ class postView(HTTPMethodView):
                         post = request.form.get('post')
                         post_title = request.form.get("post_title")
                         tag = request.form.get("tag")
+                        now = datetime.datetime.now()
                         await con.fetch(Main.get("post_update"),post,post_title,tag,now,id)
                         await release(request.app, con)
                         return json({"message":"Success"})
@@ -87,6 +89,7 @@ main.add_route(postView.as_view(),"/post/<id:int>")
 
 
 class createPostView(HTTPMethodView):
+
     async def get(self,request):
         user = request['session'].get('user')
         if user:
@@ -104,6 +107,7 @@ class createPostView(HTTPMethodView):
                 _tag = user.get("tag")
                 if _post and _post_title and _user_id:
                     con = await pool(request.app)
+                    now = datetime.datetime.now()
                     await con.fetch(Main.get("create_post"),_post_title,_post,_user_id,now,now,_tag)
                     await release(request.app,con)
                     return json({"message":"Success"})
@@ -116,6 +120,7 @@ main.add_route(createPostView.as_view(),"/post/create")
 
 
 class createCommentView(HTTPMethodView):
+
     async def post(self,request,post_id):
         user = request['session'].get('user')
         if user:
@@ -123,7 +128,8 @@ class createCommentView(HTTPMethodView):
             if comment:
                 user_id = user.get("id")
                 con = await pool(request.app)
-                await con.fetch(Main.get('create_comment'),comment,post_id,user_id,now)
+                now = datetime.datetime.now()
+                await con.fetch(Main.get('create_comment'),comment,post_id,user_id,now,now)
                 await release(request.app,con)
                 return json({"message":"success"})
             else:
@@ -134,6 +140,7 @@ class createCommentView(HTTPMethodView):
 main.add_route(createCommentView.as_view(),"/post/<post_id:int>/comment/")
 
 class commentView(HTTPMethodView):
+
     async def put(self, request,com_id):
         user = request['session'].get('user')
         if user:
@@ -144,9 +151,10 @@ class commentView(HTTPMethodView):
                 user_id = user.get('id')
                 if author:
                     if tuple(author[0])[0] == user_id:
-                            await con.fetch(Main.get("update_comment"),comment,now,com_id)
-                            await release(request.app, con)
-                            return json({"message":"success"})
+                        now = datetime.datetime.now()
+                        await con.fetch(Main.get("update_comment"),comment,now,com_id)
+                        await release(request.app, con)
+                        return json({"message":"success"})
                     else:
                         return json({"message":"forbid"})
                 else:

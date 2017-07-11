@@ -8,6 +8,7 @@ from ..utils.sql import API
 
 
 class usersView(HTTPMethodView):
+
     async def get(self,request):
         _pool = request.app.pool
         async with _pool.acquire() as con:
@@ -20,6 +21,7 @@ api_v01.add_route(usersView.as_view(),"/users/")
 
 
 class userpostView(HTTPMethodView):
+
     async def get(self,request,id):
         _pool = request.app.pool
         async with _pool.acquire() as con:

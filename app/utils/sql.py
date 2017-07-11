@@ -19,8 +19,8 @@ Main = {
     "post_select":"select * from posts where id = $1",
     "post_update":"update posts set post = $1,post_title = $2,tag = $3,last_update_time = $4 where id = $5",
     "create_post":"insert into posts (post_title,post,author_id,create_time,last_update_time,tag) values ($1,$2,$3,$4,$5,$6)",
-    "create_comment":"insert into comments (comment,post_id,author_id,last_update_time) values ($1,$2,$3,$4)",
-    "select_post_comments":"select * from comments where post_id = $1 order by last_update_time desc",
+    "create_comment":"insert into comments (comment,post_id,author_id,last_update_time,create_time) values ($1,$2,$3,$4,$5)",
+    "select_post_comments":"select * from comments where post_id = $1 order by create_time desc",
     "select_comment_author":"select author_id from comments where id = $1",
     "update_comment":"update comments set comment = $1,last_update_time = $2 where id = $3",
     "delete_comment":"delete from comments where id = $1"
