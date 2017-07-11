@@ -14,3 +14,6 @@ create table posts (id serial primary key,post_title varchar(64),post text,creat
 last_update_time timestamp without time zone,author_id integer,tag varchar(16));
 #
 drop table posts;
+#
+create table comments (id serial primary key,comment text,post_id integer,author_id integer,
+last_update_time timestamp without time zone);

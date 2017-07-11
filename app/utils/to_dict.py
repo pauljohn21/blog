@@ -27,6 +27,16 @@ def posts_to_dict(posts):
             _posts['posts'].append(_p)
         return _posts
 
+def comments_to_dict(comments):
+    _comments = {"comments":[]}
+    if len(comments):
+        for comment in comments:
+            _c = dict(comment)
+            if _c.get("last_update_time"):
+                _c['last_update_time'] = _c['last_update_time'].strftime('%Y-%m-%d %H:%M:%S')
+                _comments['comments'].append(_c)
+        return _comments
+
 
 
 
